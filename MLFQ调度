@@ -1,0 +1,36 @@
+使MLFQ在不同环境下运行程序，输入prompt> ./mlfq.py
+可使用标志（-h）查看选项Usage: mlfq.py [options]
+Options:
+  -h, --help            show this help message and exit
+  -s SEED, --seed=SEED  the random seed
+  -n NUMQUEUES, --numQueues=NUMQUEUES
+                        number of queues in MLFQ (if not using -Q)
+  -q QUANTUM, --quantum=QUANTUM
+                        length of time slice (if not using -Q)
+  -Q QUANTUMLIST, --quantumList=QUANTUMLIST
+                        length of time slice per queue level, 
+                        specified as x,y,z,... where x is the 
+                        quantum length for the highest-priority 
+                        queue, y the next highest, and so forth
+  -j NUMJOBS, --numJobs=NUMJOBS
+                        number of jobs in the system
+  -m MAXLEN, --maxlen=MAXLEN
+                        max run-time of a job (if random)
+  -M MAXIO, --maxio=MAXIO
+                        max I/O frequency of a job (if random)
+  -B BOOST, --boost=BOOST
+                        how often to boost the priority of all 
+                        jobs back to high priority (0 means never)
+  -i IOTIME, --iotime=IOTIME
+                        how long an I/O should last (fixed constant)
+  -S, --stay            reset and stay at same priority level 
+                        when issuing I/O
+  -l JLIST, --jlist=JLIST
+                        a comma-separated list of jobs to run, 
+                        in the form x1,y1,z1:x2,y2,z2:... where 
+                        x is start time, y is run time, and z 
+                        is how often the job issues an I/O request
+  -c                    compute answers for me
+  模拟器的使用方法之一，生成一些随机作业，如果想创建一个随机三项作业，则输入prompt> ./mlfq.py -j 3
+  然后会看到具体问题的定义，这将生成一个随机工作负载，包含三个作业
+  
