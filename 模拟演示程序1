@@ -1,7 +1,8 @@
 模拟使用multi.py(初级多CPU调度模拟器）
 运行模拟器，则输入prompt> ./multi.py    默认模式下，要模拟使用4个CPU运行，则输入prompt> ./multi.py -n 4 
 在4-CPU系统中，每个缓存的大小都是‘100，运行’prompt> ./multi.py -n 4 -M 100
-运行模拟器，需安排作业任务，可指定作业。例如：要运行两个作业，每个作业运行时间为100，但工作集的大小分别为50和150，则输入prompt> ./multi.py -n 4 -M 100 -L 1:100:50,2:100:150
+运行模拟器，需安排作业任务，可指定作业。例如：要运行两个作业，每个作业运行时间为100，但工作集的大小分别为50和150，则输入prompt> ./multi.py -n 4 -M 100 -L 1:100:50,2:100:150 For example, if you want to run two jobs, each with run-time of 100, but with different working-set-sizes of 50 and 150, respectively, you would do something like this:
 确定排班政策，如选择默认策略：一个集中式调度队列，使用循环分配作业到空闲CPU
 输入prompt> ./multi.py -h
 Usage: multi.py [options]
+ For example, if you want to run two jobs, each with run-time of 100, but with different working-set-sizes of 50 and 150, respectively, you would do something like this:
