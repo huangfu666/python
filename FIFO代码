@@ -1,0 +1,183 @@
+'''FIFO、OPT:4 3 2 1 4 3 5 4 3 2 1 5'''
+'''LRU:1 3 2 1 1 3 5 1 3 2 1 5'''
+from tkinter import *
+root = Tk()   #窗口P调入
+root.title('FIFO,OT,LRU页面置换算法')
+lb = Label(root,text='FIFO,OPT,LRU页面置换算法',fg='black',font=("黑体",21))
+lb.pack()
+root.geometry('600x650')
+
+def FIFO():
+    num = input1.get( )  # 输入一个一维数组，每个数之间使空格隔开
+    arr = [int(n) for n in num.split()]  # 将输入每个数以空格键隔开做成数组
+    page=int(input2.get())  #页面数量
+    txt.insert(END, "FIFO页面置换过程为:")       #将后面那个数字插入到末端
+    result = []    #存放当前物理块中的页面
+    cnt= 0    #缺页次数
+    sum = 0   #当前访问数组值下标
+    for item in arr:     #遍历数组
+        if len(result) == page:
+            for j in range(sum, len(arr)):  #从没访问的开始
+                if arr[j]  in result:    #原来的列表有
+                    txt.insert(END, "\n")
+                    txt.insert(END, result)
+                else:
+                    del result[0]       #弹出队列顶
+                    result.append(arr[j])
+                    cnt+= 1             #缺页
+                    txt.insert(END, "\n")
+                    txt.insert(END, result)
+                    txt.insert(END,"+")
+            break
+        elif item in result:      #没满但是里面有了
+            txt.insert(END, result)
+            sum += 1
+        else:
+            result.append(item)   #没满，里面没有 放最后
+            cnt+= 1
+            sum += 1
+
+            txt.insert(END, "\n")
+            txt.insert(END, result)
+            txt.insert(END, "+")
+    ans1= float(cnt/len(arr))  #缺页率计算
+    txt.insert(END, "\n")
+    txt.insert(END,"FIFO缺页中断次数为：%d\n" % cnt)
+    txt.insert(END, "FIFO缺页率为：%.2f\n" % ans1)
+    input1.delete(0,END)
+    input2.delete(0,END)  # 清空输入
+def LRU():
+    num = input1.get()  # 输入一个一维数组，每个数之间使空格隔开
+    arr = [int(n) for n in num.split()]  # 将输入每个数以空格键隔开做成数组
+    page = int(input2.get())  # 页面物理块数
+    txt.insert(END, "LRU页面置换过程为:")
+    result = []
+    cnt = 0
+    sum = 0
+    for item in arr:
+        if len(result) == page:     #满了
+            for j in range(sum, len(arr)):   #从sum->总长度  其中sum表示多少位被处理了
+                if arr[j] in result:     ##满了但是在里面,那就把最后一位插入到第一位，类似于来的放到栈顶
+                    a = result[result.index(arr[j])]  #index字符串长度
+                    del result[result.index(arr[j])]
+                    result.insert(0, a)
+                    txt.insert(END, "\n")
+                    txt.insert(END, result)
+                else:
+                    del result[-1]      #如果不在里面，那就把最后一个删了
+                    result.insert(0, arr[j])
+                    cnt += 1
+                    txt.insert(END, "\n")
+                    txt.insert(END, result)
+                    txt.insert(END, "+")  #缺页次数+1
+            break
+        elif item in result:   #没满但是在里面,那就把最后一位插入到第一位 更新 update
+            a = result[result.index(item)]
+            del result[result.index(item)]
+            result.insert(0, a)
+            txt.insert(END, "\n")
+            txt.insert(END, result)
+            sum += 1
+        else:
+            result.insert(0, item)
+            cnt += 1
+            sum += 1
+            txt.insert(END, "\n")
+            txt.insert(END, result)
+            txt.insert(END, "+")
+    ans2 = float((cnt) / len(arr))
+    txt.insert(END, "\n")
+    txt.insert(END, "LRU缺页中断次数为：%d\n" % cnt)
+    txt.insert(END, "LRU缺页率为：%.2f" % ans2)
+    txt.insert(END,"\n")
+    input1.delete(0,END)
+    input2.delete(0,END)  # 清空输入
+def compare(param, result):    #比较一个数组和一个数组
+    aaa = {}
+    for item in param:
+        aaa[item]=param.index(item)
+    for i in result:
+        if i not in aaa.keys():   #字典方法
+            return i
+    return list(aaa.keys())[list(aaa.values()).index(max(aaa.values()))]  #values意为返回字典的所有的值
+def OPT():
+    num = input1.get()  # 输入一个一维数组，每个数之间使空格隔开
+    arr = [int(n) for n in num.split()]  # 将输入每个数以空格键隔开做成数组
+    page = int(input2.get())  # 页面
+    txt.insert(END, "OPT页面置换过程为:")
+    result = []
+    cnt = 0
+    sum = 0
+    for item in arr:
+        if len(result) == page:
+            for j in range(sum, len(arr)):   #sum->maxlength
+                if arr[j] in result:    #在里面 那就更新一下最新的就好，放在顶部 是否可以不更新？
+                    '''p = result[result.index(arr[j])]
+                    del result[result.index(arr[j])]
+                    result.insert(0, p)'''
+                    txt.insert(END, "\n")
+                    txt.insert(END, result)
+
+                else:
+                    s = compare(arr[j:len(arr)], result)  #比较找出谁最后出来 找出后面没有的或者很久才会进来的页面
+                    for i in result:
+                        if s == i:
+                            result.remove(i)  #移除第一个i值
+                            result.append(arr[j])
+                            cnt += 1
+                            txt.insert(END, "\n")
+                            txt.insert(END, result)
+                            txt.insert(END, "+")
+            break
+        elif item in result:
+            txt.insert(END, result)
+            txt.insert(END, "\n")
+            sum += 1
+        else:
+            result.append(item)  #列表末尾添加
+            cnt += 1
+            sum += 1
+            txt.insert(END, "\n")
+            txt.insert(END, result)
+            txt.insert(END, "+")
+
+
+
+    txt.insert(END, "\n")
+    ans = float((cnt) / len(arr))
+    txt.insert(END, "OPT缺页中断次数为：%d\n" % cnt)
+    txt.insert(END, "OPT缺页率为：%.2f" % ans)
+    txt.insert(END,"\n")
+
+    input1.delete(0,END)
+    input2.delete(0,END)  # 清空输入
+
+
+#页面设计
+lb1 = Label(root,text='请输入页面输入顺序')
+lb1.place(relx=0.1, rely=0.045, relwidth=0.8, relheight=0.1)
+input1= Entry(root)
+input1.place(relx=0.6, rely=0.05, relwidth=0.3, relheight=0.1)
+
+lb2 = Label(root,text='请输入物理块数,并选择算法')
+lb2.place(relx=0.1, rely=0.2, relwidth=0.8, relheight=0.1)
+input2= Entry(root)
+input2.place(relx=0.63, rely=0.2, relwidth=0.3, relheight=0.1)
+
+lb3= Label(root, text='Answer:')
+lb3.place(relx=0, rely=0.5, relwidth=0.3, relheight=0.1)
+txt = Text(root)
+txt.place(rely=0.6, relheight=0.4)
+
+# OPT 最优
+btn1 = Button(root, text='OPT',command=lambda:OPT())
+btn1.place(relx=0, rely=0.4, relwidth=0.3, relheight=0.1)
+
+# FIFO 先进先出
+btn2 = Button(root, text='FIFO',command=FIFO)
+btn2.place(relx=0.3, rely=0.4, relwidth=0.3, relheight=0.1)
+
+# LRU 最久未使用
+btn3 = Button(root, text='LRU',command=lambda:LRU())
+btn3.place(relx=0.6, rely=0.4, relwidth=0.3, relheight=0.1)
+root.mainloop()
