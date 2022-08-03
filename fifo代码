@@ -1,0 +1,33 @@
+def FIFO(page,arr):
+    print("FIFO页面置换过程为:" )
+    result=[]
+    loss_page=0
+    sum=0
+    for item in arr:
+        if len(result)==page:
+            for j in range(sum, len(arr)):
+                if arr[j] in result:
+                    print("no exchange")
+                    print("第%i页"%j,end="")
+                    print(result)
+                else:
+                    del result[0]
+                    result.append(arr[j])
+                    loss_page += 1
+                    print("第%i页" % j,end="")
+                    print(result)
+            break
+        elif item in result:
+            print("no exchange")
+            print("第%i页" % sum,end="")
+            print(result)
+            sum+=1
+        else:
+            result.append(item)
+            loss_page+=1
+            print("第%i页" % sum,end="")
+            print(result)
+            sum+=1
+
+    result_page=float((loss_page)/len(arr))
+    print("FIFO缺页率为：%.2f"%result_page)
