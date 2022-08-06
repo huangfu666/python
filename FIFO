@@ -1,0 +1,60 @@
+array = (7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2, 1, 2, 0, 1, 7, 0, 1)
+memory bb= []
+pointer = 0
+
+
+# if the memory is empty
+
+
+def is_empty(_list_):
+    if len(_list_) == 0:
+        re1 = 1
+    else:
+        re1 = 0
+    return re1
+
+
+# if the memory is empty
+
+def is_fulled(_list_):
+    if len(_list_) == 3:
+        re1 = 1
+    else:
+        re1 = 0
+    return re1
+
+
+def search(target, _list_):
+    exist = 0
+    for each_item in _list_:
+        if each_item == target:
+            exist = 1
+            break
+    return exist
+
+
+# put in memory
+
+
+def push(target, _list_, temp):
+    if is_empty(_list_) == 1 or is_fulled(_list_) == 0:
+        _list_.append(target)
+    else:
+        if search(target, _list_) == 1:
+            print('no exchange')
+        else:
+            if temp > 2:
+                temp = 0
+                _list_.pop(temp)
+                _list_.insert(temp, target)
+                temp = temp + 1
+            else:
+                _list_.pop(temp)
+                _list_.insert(temp, target)
+                temp = temp + 1
+    return temp
+
+
+for each_item in array:
+    pointer = push(each_item, memory, pointer)
+    print(memory)
