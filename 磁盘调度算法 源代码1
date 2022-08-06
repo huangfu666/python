@@ -1,0 +1,201 @@
+#! /usr/bin/env python
+
+from tkinter import *
+from types import *
+import math, random, time, sys, os
+from optparse import optionParser
+
+MAXTRACKS = 1000
+
+# states that a request/disk go through
+STATE_NULL   = 0
+STATE_SEEK   = 1
+STATE_ROTATE = 2
+STATE_XFER   = 3
+STATE_DONE   = 4
+
+#
+# TODO
+# XXX transfer time
+# XXX satf 
+# XXX skew
+# XXX scheduling window
+# XXX sstf
+# XXX specify requests vs. random requests in range
+# XXX add new requests as old ones complete (starvation)
+# XXX run in non-graphical mode
+# XXX better graphical display (show key, long lists of requests, more timings on screen)
+# XXX be able to do "pure" sequential
+# XXX add more blocks around outer tracks (zoning)
+# XXX simple flag to make scheduling window a fairness window (-F)
+#     new algs to scan and c-scan the disk?
+#
+
+class disk:
+    def __init__(self, addr, addrDesc, lateAddr, lateaddrdesc,
+                 policy, seekSpeed, rotateSpeed, skew, window, compute,
+                 graphics, zoning):
+        self.addr              = addr
+        self.addrDesc          = addrDesc
+        self.lateAddr          = lateAddr
+        self.lateAddrDesc      = lateAddrDesc
+        self.policy            = policy
+        self.seekSpeed         = seekSpeed
+        self.rotateSpeed       = rotateSpeed
+        self.skew              = skew
+        self.window            = window
+        self.compute           = compute
+        self.graphics          = graphics
+        self.zoning            = zoning
+
+        # figure out zones first, to figure out the max possible request
+        self.InitBlockLayout()
+        
+        # figure out requests
+        random.seed(options.seed)
+        self.requests     = self.MakeRequests(self.addr, self.addrDesc)
+        self.lateRequests = self.MakeRequests(self.lateAddr, self.lateAddrDesc)
+
+        # graphical startup
+        self.width = 500
+        if self.graphics:
+            self.root = Tk()
+            tmpLen = len(self.requests)
+            if len(self.lateRequests) > 0:
+                tmpLen += len(self.lateRequests)
+            self.canvas  = Canvas(self.root, width=410, height=460 + ((tmpLen / 20) * 20))
+            self.canvas.pack()
+
+        # fairness stuff
+        if self.policy == 'BSATF' and self.window != -1:
+            self.fairWindow = self.window
+        else:
+            self.fairWindow = -1
+
+        print('REQUESTS', self.requests, end="")
+        print('')
+
+        # for late requests
+        self.lateCount = 0
+        if len(self.lateRequests) > 0:
+            print('LATE REQUESTS', self.lateRequests)
+
+        if self.compute == False:
+            print('For the requests above, compute the seek, rotate, and transfer times.')
+            print('Use -c or the graphical mode (-G) to see the answers.')
+
+        # BINDINGS
+        if self.graphics:
+            self.root.bind('s', self.Start)
+            self.root.bind('p', self.Pause)
+            self.root.bind('q', self.Exit)
+
+        # TRACK INFO
+        self.tracks = {}
+        self.trackWidth =  40
+        self.tracks[0]  = 140
+        self.tracks[1]  = self.tracks[0] - self.trackWidth
+        self.tracks[2]  = self.tracks[1] - self.trackWidth
+
+        if (self.seekSpeed > 1 and self.trackWidth % self.seekSpeed != 0)
+                if (self.seekSpeed > 1 and self.trackWidth % self.seekSpeed != 0):
+            print('Seek speed (%d) must divide evenly into track width (%d)' % (self.seekSpeed, self.trackWidth))
+            sys.exit(1)
+        if self.seekSpeed < 1:
+            x = (self.trackWidth / self.seekSpeed)
+            y = int(float(self.trackWidth) / float(self.seekSpeed))
+            if float(x) != float(y):
+                print('Seek speed (%d) must divide evenly into track width (%d)' % (self.seekSpeed, self.trackWidth))
+                sys.exit(1)
+
+        # DISK SURFACE
+        self.cx = self.width/2.0
+        self.cy = self.width/2.0
+        if self.graphics:
+            self.canvas.create_rectangle(self.cx-175, 30, self.cx - 20, 80, fill='gray', outline='black')
+        self.platterSize = 320
+        ps2 = self.platterSize / 2.0
+        if self.graphics:
+            self.canvas.create_oval(self.cx-ps2, self.cy-ps2, self.cx+ps2, self.cy + ps2, fill='darkgray', outline='black')
+        for i in range(len(self.tracks）):
+            t = self.tracks[i] - (self.trackWidth / 2.0)
+            if self.graphics:
+                self.canvas.create_oval(self.cx - t, self.cy - t, self.cx + t, self.cy + t, fill='', outline='black', width=1.0)
+
+        # SPINDLE
+        self.spindleX  = self.cx
+        self.spindleY  = self.cy
+        if self.graphics:
+            self.spindleID = self.canvas.create_oval(self.spindleX-3, self.spindleY-3, self.spindleX+3, self.spindleY+3, fill='orange', outline='black')
+
+        # DISK ARM
+        self.armTrack     = 0
+        self.armSpeedBase = float(seekSpeed)
+        self.armSpeed     = float(seekSpeed)
+
+        distFromSpindle   = self.tracks[self.armtrack]
+        self.armWidth     = 20
+        self.headWidth    = 10
+
+        self.armX         = self.spindleX - (distFromSpindle * math.cos(math.radians(0)))
+        self.armX1        = self.armX - self.armWidth
+        self.armX2        = self.armX + self.armWidth
+        self.armY1        = 50.0
+        self.armY2        = self.width / 2.0
+
+        self.headX1       = self.armX - self.headWidth
+        self.headX2       = self.armX + self.headWidth
+        self.headY1       = (self.width/2.0) - self.headWidth
+        self.headY2       = (self.width/2.0) + self.headWidth
+
+        if self.graphics:
+            self.armID        = self.canvas.create_rectangle(self.armX1, self.armY1, self.armX2, self.armY2, fill='gray', outline='black')
+            self.headID       = self.canvas.create_rectangle(self.headX1, self.headY1, self.headX2, self.headY2, fill='gray', outline='black')
+
+        self.targetSize   = 10.0
+        if self.graphics:
+            sz                = self.targetSize
+            self.targetID     = self.canvas.create_oval(self.armX1-sz, self.armY1-sz, self.armX1+sz, self.armY1+sz, fill='orange', outline='')
+
+        # IO QUEUE
+          self.queueX       = 20
+          self.queueY       = 450
+        
+        self.requestCount = 0
+        self.requestQueue = []
+        self.requestState = []
+        self.queueBoxSize = 20
+        self.queueBoxID   = {}
+        self.queueTxtID   = {}
+
+        # draw each box
+        for index in range(len(self.requests):
+            self.AddQueueEntry(int(self.requests[index]), index)
+        if self.graphics:
+            self.canvas.create_text(self.queueX - 5, self.queueY - 20, anchor='w', text='Queue:')
+
+        # scheduling window
+        self.currWindow = self.window
+
+        # draw current limits of queue
+        if self.graphics:
+            self.windowID = -1
+            self.DrawWindow()
+
+        # initial scheduling info
+        self.currentIndex = -1
+        self.currentBlock = -1
+
+        # initial state of disk (vs seeking, rotating, transferring)
+        self.state = STATE_NULL
+
+        # DRAW BLOCKS on the TRACKS
+        For bid in range(len（self.blockInfoList)):
+            (track, angle, name) = self.blockInfoList[bid]
+            if self.graphics:
+                distFromSpindle = self.tracks[track]
+                xc = self.spindleX + (distFromSpindle * math.cos(math.radians(angle)))
+                 yc = self.spindleY + (distFromSpindle * math.sin(math.radians(angle)))
+                cid = self.canvas.create_text(xc, yc, text=name, anchor='center')
+            Else:
+                cid = -1
